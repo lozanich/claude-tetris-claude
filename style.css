@@ -133,6 +133,14 @@ body.light {
   letter-spacing: 1px;
 }
 
+.panel-section.hidden {
+  display: none;
+}
+
+.combo-value {
+  color: #4dd0e1;
+}
+
 #next-canvas {
   display: block;
   border: 1px solid var(--board-border);

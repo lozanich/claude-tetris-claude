@@ -29,6 +29,11 @@ const PIECES = [
 ];
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
+const TSPIN_SCORES = [100, 400, 800, 1200, 1600];
+const PERFECT_CLEAR_SCORES = [0, 800, 1200, 1800, 2000];
+const COMBO_BASE = 50;
+const B2B_MULTIPLIER = 1.5;
+const EFFECT_DURATION = 1200;
 
 const POWERUP_KINDS = ['bomb', 'lightning', 'dye', 'gravity', 'freeze'];
 const POWERUP_COLORS = { bomb: '#ff5252', lightning: '#fff176', dye: '#f06292', gravity: '#9575cd', freeze: '#4fc3f7' };
@@ -43,6 +48,8 @@ const nextCtx = nextCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
+const comboSection = document.getElementById('combo-section');
+const comboEl = document.getElementById('combo');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
@@ -51,6 +58,8 @@ const themeToggleBtn = document.getElementById('theme-toggle');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let powerUpCounter, pendingPowerUp, frozen, frozenUntil;
+let comboCount, backToBack, lastAction, effects;
+let audioCtx;
 
 function applyTheme(theme) {
   document.body.classList.toggle('light', theme === 'light');
@@ -117,6 +126,7 @@ function tryRotate() {
     if (!collide(rotated, current.x + kick, current.y)) {
       current.shape = rotated;
       current.x += kick;
+      lastAction = 'rotate';
       return;
     }
   }
@@ -129,7 +139,62 @@ function merge() {
         board[current.y + r][current.x + c] = current.shape[r][c];
 }
 
-function clearLines() {
+function isTSpinCorner() {
+  if (current.type !== 3 || lastAction !== 'rotate') return false;
+  const cx = current.x + 1, cy = current.y + 1;
+  const corners = [[cx - 1, cy - 1], [cx + 1, cy - 1], [cx - 1, cy + 1], [cx + 1, cy + 1]];
+  let filled = 0;
+  for (const [x, y] of corners) {
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS || board[y][x]) filled++;
+  }
+  return filled >= 3;
+}
+
+function pushEffect(text, color) {
+  effects.push({ text, ttl: EFFECT_DURATION, color });
+}
+
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+
+function playTone(freq, dur = 0.15, type = 'square', gain = 0.05, delay = 0) {
+  ensureAudio();
+  const startAt = audioCtx.currentTime + delay;
+  const osc = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  g.gain.value = gain;
+  osc.connect(g).connect(audioCtx.destination);
+  osc.start(startAt);
+  g.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
+  osc.stop(startAt + dur);
+}
+
+function playComboSound(count) {
+  playTone(440 + count * 40, 0.15, 'square', 0.05);
+}
+
+function playTSpinSound() {
+  playTone(300, 0.12, 'sawtooth', 0.06);
+  playTone(500, 0.15, 'sawtooth', 0.06, 0.08);
+}
+
+function playB2BSound() {
+  playTone(523.25, 0.2, 'triangle', 0.06);
+  playTone(659.25, 0.2, 'triangle', 0.06);
+  playTone(783.99, 0.2, 'triangle', 0.06);
+}
+
+function playPerfectClearSound() {
+  playTone(523.25, 0.15, 'sine', 0.07, 0);
+  playTone(659.25, 0.15, 'sine', 0.07, 0.12);
+  playTone(783.99, 0.15, 'sine', 0.07, 0.24);
+  playTone(1046.5, 0.25, 'sine', 0.07, 0.36);
+}
+
+function clearLines(tSpin) {
   let cleared = 0;
   for (let r = ROWS - 1; r >= 0; r--) {
     if (board[r].every(v => v !== 0)) {
@@ -139,18 +204,59 @@ function clearLines() {
       r++;
     }
   }
-  if (cleared) {
-    lines += cleared;
-    score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
-    dropInterval = Math.max(100, 1000 - (level - 1) * 90);
-    powerUpCounter += cleared;
-    if (powerUpCounter >= LINES_PER_POWERUP) {
-      powerUpCounter -= LINES_PER_POWERUP;
-      pendingPowerUp = true;
+
+  if (!cleared) {
+    comboCount = -1;
+    if (tSpin) {
+      score += TSPIN_SCORES[0] * level;
+      pushEffect('T-SPIN', '#ba68c8');
+      playTSpinSound();
+      updateHUD();
     }
-    updateHUD();
+    return;
   }
+
+  lines += cleared;
+
+  comboCount++;
+  let base = (tSpin ? TSPIN_SCORES[cleared] : LINE_SCORES[cleared]) || 0;
+
+  if (tSpin) {
+    pushEffect('T-SPIN', '#ba68c8');
+    playTSpinSound();
+  }
+
+  const difficult = tSpin || cleared === 4;
+  if (difficult && backToBack) {
+    base *= B2B_MULTIPLIER;
+    pushEffect('B2B!', '#ffd54f');
+    playB2BSound();
+  }
+  backToBack = difficult;
+
+  score += base * level;
+
+  if (comboCount > 0) {
+    score += COMBO_BASE * comboCount * level;
+    pushEffect(`COMBO x${comboCount + 1}`, '#4dd0e1');
+    playComboSound(comboCount);
+  }
+
+  level = Math.floor(lines / 10) + 1;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+  powerUpCounter += cleared;
+  if (powerUpCounter >= LINES_PER_POWERUP) {
+    powerUpCounter -= LINES_PER_POWERUP;
+    pendingPowerUp = true;
+  }
+
+  if (board.every(row => row.every(v => v === 0))) {
+    score += PERFECT_CLEAR_SCORES[cleared] * level;
+    pushEffect('PERFECT CLEAR', '#fff176');
+    playPerfectClearSound();
+  }
+
+  updateHUD();
 }
 
 function bombArea(cx, cy) {
@@ -242,16 +348,19 @@ function softDrop() {
 }
 
 function lockPiece() {
+  let tSpin = false;
   if (current.isPowerUp) {
     applyPowerUp(current.kind, current.x, current.y);
   } else {
     merge();
+    tSpin = isTSpinCorner();
   }
-  clearLines();
+  clearLines(tSpin);
   spawn();
 }
 
 function spawn() {
+  lastAction = null;
   current = next;
   if (pendingPowerUp) {
     next = randomPowerUpPiece();
@@ -269,6 +378,12 @@ function updateHUD() {
   scoreEl.textContent = score.toLocaleString();
   linesEl.textContent = lines;
   levelEl.textContent = level;
+  if (comboCount > 0) {
+    comboEl.textContent = `x${comboCount + 1}`;
+    comboSection.classList.remove('hidden');
+  } else {
+    comboSection.classList.add('hidden');
+  }
 }
 
 function drawBlock(context, x, y, colorIndex, size, alpha) {
@@ -324,6 +439,8 @@ function draw() {
     for (let c = 0; c < COLS; c++)
       drawBlock(ctx, c, r, board[r][c], BLOCK);
 
+  drawEffects();
+
   if (gameOver) return;
 
   // ghost
@@ -351,6 +468,19 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText('CONGELADO', canvas.width / 2, 24);
   }
+}
+
+function drawEffects() {
+  if (!effects.length) return;
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 18px sans-serif';
+  effects.forEach((effect, i) => {
+    const alpha = Math.max(0, effect.ttl / EFFECT_DURATION);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = effect.color;
+    ctx.fillText(effect.text, canvas.width / 2, 28 + i * 24);
+  });
+  ctx.globalAlpha = 1;
 }
 
 function drawNext() {
@@ -392,6 +522,10 @@ function togglePause() {
 function loop(ts) {
   const dt = ts - lastTime;
   lastTime = ts;
+  if (effects.length) {
+    for (const effect of effects) effect.ttl -= dt;
+    effects = effects.filter(e => e.ttl > 0);
+  }
   if (frozen) {
     if (ts >= frozenUntil) frozen = false;
   } else {
@@ -422,6 +556,10 @@ function init() {
   pendingPowerUp = false;
   frozen = false;
   frozenUntil = 0;
+  comboCount = -1;
+  backToBack = false;
+  lastAction = null;
+  effects = [];
   lastTime = performance.now();
   next = randomPiece();
   spawn();
@@ -436,10 +574,10 @@ document.addEventListener('keydown', e => {
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
-      if (!collide(current.shape, current.x - 1, current.y)) current.x--;
+      if (!collide(current.shape, current.x - 1, current.y)) { current.x--; lastAction = 'move'; }
       break;
     case 'ArrowRight':
-      if (!collide(current.shape, current.x + 1, current.y)) current.x++;
+      if (!collide(current.shape, current.x + 1, current.y)) { current.x++; lastAction = 'move'; }
       break;
     case 'ArrowDown':
       softDrop();
