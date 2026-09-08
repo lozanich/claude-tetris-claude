@@ -1,0 +1,35 @@
+name: Claude Issue Triage
+
+on:
+  issues:
+    types: [opened, edited]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Issue Triage
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Analiza el issue #${{ github.event.issue.number }} de este repositorio (Tetris en JS vanilla, ver CLAUDE.md para arquitectura).
+
+            1. Lee título y cuerpo del issue con `gh issue view ${{ github.event.issue.number }}`.
+            2. Determina las labels apropiadas SOLO de este set (labels default de GitHub): bug, enhancement, question, documentation, duplicate, invalid, wontfix, help wanted, good first issue. Aplícalas con `gh issue edit ${{ github.event.issue.number }} --add-label "..."`. No inventes labels nuevas ni uses labels fuera de esta lista.
+            3. Escribe un diagnóstico general en español como comentario del issue (`gh issue comment ${{ github.event.issue.number }} --body "..."`) que incluya:
+               - Resumen del problema/petición.
+               - Área(s) de `game.js`/`index.html`/`style.css` probablemente involucradas (función o sección concreta si es identificable).
+               - Causa probable o enfoque de solución a alto nivel (sin implementar código todavía).
+            4. Si el issue ya tiene un comentario de diagnóstico previo tuyo (evento `edited`), actualiza tu análisis reflejando los cambios en vez de duplicar comentarios: revisa comentarios existentes con `gh issue view ${{ github.event.issue.number }} --comments` y edita el tuyo con `gh issue comment --edit-last` si ya existe, o crea uno nuevo si no.
+          claude_args: '--allowedTools "Bash(gh issue view:*)" "Bash(gh issue edit:*)" "Bash(gh issue comment:*)"'
