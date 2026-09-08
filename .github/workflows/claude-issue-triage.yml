@@ -31,5 +31,6 @@ jobs:
                - Resumen del problema/petición.
                - Área(s) de `game.js`/`index.html`/`style.css` probablemente involucradas (función o sección concreta si es identificable).
                - Causa probable o enfoque de solución a alto nivel (sin implementar código todavía).
+               El comentario debe estar en formato Markdown válido para GitHub (encabezados con `#`, listas con `-`, bloques de código con ``` y nombres de función/archivo entre backticks).
             4. Si el issue ya tiene un comentario de diagnóstico previo tuyo (evento `edited`), actualiza tu análisis reflejando los cambios en vez de duplicar comentarios: revisa comentarios existentes con `gh issue view ${{ github.event.issue.number }} --comments` y edita el tuyo con `gh issue comment --edit-last` si ya existe, o crea uno nuevo si no.
           claude_args: '--allowedTools "Bash(gh issue view:*)" "Bash(gh issue edit:*)" "Bash(gh issue comment:*)"'
