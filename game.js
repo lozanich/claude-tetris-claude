@@ -73,6 +73,14 @@ const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
 const skinSelect = document.getElementById('skin-select');
+const pauseMenu = document.getElementById('pause-menu');
+const resumeBtn = document.getElementById('resume-btn');
+const pauseRestartBtn = document.getElementById('pause-restart-btn');
+const toggleControlsBtn = document.getElementById('toggle-controls-btn');
+const pauseControlsList = document.getElementById('pause-controls-list');
+const startLevelSelect = document.getElementById('start-level');
+
+const START_LEVEL_KEY = 'tetris-start-level';
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let powerUpCounter, pendingPowerUp, frozen, frozenUntil;
@@ -283,7 +291,7 @@ function clearLines(tSpin) {
   }
 
   level = Math.floor(lines / 10) + 1;
-  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
+  dropInterval = dropIntervalForLevel(level);
   powerUpCounter += cleared;
   if (powerUpCounter >= LINES_PER_POWERUP) {
     powerUpCounter -= LINES_PER_POWERUP;
@@ -595,21 +603,49 @@ function drawNext() {
 function endGame() {
   gameOver = true;
   cancelAnimationFrame(animId);
+  showGameOverBlock();
   overlayTitle.textContent = 'GAME OVER';
   overlayScore.textContent = `Puntuación: ${score.toLocaleString()}`;
   overlay.classList.remove('hidden');
+}
+
+function getStartLevel() {
+  const stored = parseInt(localStorage.getItem(START_LEVEL_KEY), 10);
+  if (Number.isInteger(stored) && stored >= 1 && stored <= 10) return stored;
+  return 1;
+}
+
+function dropIntervalForLevel(lvl) {
+  return Math.max(100, 1000 - (lvl - 1) * 90);
+}
+
+function closePauseMenu() {
+  pauseControlsList.classList.add('hidden');
+  pauseMenu.classList.add('hidden');
+}
+
+function showGameOverBlock() {
+  closePauseMenu();
+  overlayTitle.classList.remove('hidden');
+  overlayScore.classList.remove('hidden');
+  restartBtn.classList.remove('hidden');
 }
 
 function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    closePauseMenu();
+    overlay.classList.add('hidden');
     lastTime = performance.now();
     loop(lastTime);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
+    overlayTitle.classList.add('hidden');
+    overlayScore.classList.add('hidden');
+    restartBtn.classList.add('hidden');
+    startLevelSelect.value = String(getStartLevel());
+    pauseMenu.classList.remove('hidden');
     overlay.classList.remove('hidden');
   }
 }
@@ -642,10 +678,10 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  level = getStartLevel();
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = dropIntervalForLevel(level);
   dropAccum = 0;
   powerUpCounter = 0;
   pendingPowerUp = false;
@@ -659,13 +695,14 @@ function init() {
   next = randomPiece();
   spawn();
   updateHUD();
+  showGameOverBlock();
   overlay.classList.add('hidden');
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
+  if (e.code === 'KeyP' || e.code === 'Escape') { togglePause(); return; }
   if (paused || gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
@@ -692,7 +729,16 @@ document.addEventListener('keydown', e => {
 restartBtn.addEventListener('click', init);
 themeToggleBtn.addEventListener('click', toggleTheme);
 skinSelect.addEventListener('change', e => changeSkin(e.target.value));
+resumeBtn.addEventListener('click', () => { if (paused) togglePause(); });
+pauseRestartBtn.addEventListener('click', init);
+toggleControlsBtn.addEventListener('click', () => {
+  pauseControlsList.classList.toggle('hidden');
+});
+startLevelSelect.addEventListener('change', () => {
+  localStorage.setItem(START_LEVEL_KEY, startLevelSelect.value);
+});
 
 initTheme();
 initSkin();
+startLevelSelect.value = String(getStartLevel());
 init();
