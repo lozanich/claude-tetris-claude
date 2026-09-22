@@ -22,6 +22,12 @@ body {
   --overlay-title-color: #e57373;
   --restart-fg: #0f0f17;
   --restart-hover: #9bbdff;
+  --hs-row-bg: rgba(255, 255, 255, 0.04);
+  --hs-current-bg: rgba(255, 213, 79, 0.18);
+  --hs-current-border: #ffd54f;
+  --hs-input-bg: #14141f;
+  --hs-input-border: #3a3a5a;
+  --hs-reset-color: #e57373;
 
   background: var(--bg);
   color: var(--fg);
@@ -51,6 +57,12 @@ body.light {
   --overlay-title-color: #d32f2f;
   --restart-fg: #ffffff;
   --restart-hover: #5c7ce0;
+  --hs-row-bg: rgba(0, 0, 0, 0.03);
+  --hs-current-bg: rgba(255, 193, 7, 0.25);
+  --hs-current-border: #f9a825;
+  --hs-input-bg: #ffffff;
+  --hs-input-border: #c8c8d8;
+  --hs-reset-color: #d32f2f;
 }
 
 .wrapper {
@@ -226,5 +238,137 @@ kbd {
 }
 
 #restart-btn:hover {
+  background: var(--restart-hover);
+}
+
+/* ---- Highscores ---- */
+.highscore-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.highscore-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--hs-row-bg);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+.highscore-row.highscore-current {
+  background: var(--hs-current-bg);
+  outline: 1px solid var(--hs-current-border);
+}
+
+.hs-rank {
+  color: var(--label-color);
+  min-width: 14px;
+}
+
+.hs-name {
+  flex: 1;
+  color: var(--fg);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hs-score {
+  font-family: 'Courier New', Courier, monospace;
+  color: var(--accent);
+}
+
+.highscore-empty {
+  font-size: 12px;
+  color: var(--controls-color);
+}
+
+.highscore-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--controls-color);
+}
+
+.highscore-stats strong {
+  color: var(--accent);
+}
+
+#reset-highscores-btn {
+  background: transparent;
+  border: 1px solid var(--kbd-border);
+  color: var(--hs-reset-color);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+}
+
+#reset-highscores-btn:hover {
+  border-color: var(--hs-reset-color);
+}
+
+.overlay-highscores {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+}
+
+.overlay-highscores .label {
+  align-self: center;
+}
+
+.highscore-entry {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--hs-current-border);
+  border-radius: 6px;
+}
+
+.highscore-entry.hidden {
+  display: none;
+}
+
+.highscore-entry label {
+  font-size: 12px;
+  color: var(--fg);
+}
+
+#player-name-input {
+  background: var(--hs-input-bg);
+  border: 1px solid var(--hs-input-border);
+  color: var(--fg);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 14px;
+  text-align: center;
+  width: 140px;
+  letter-spacing: 1px;
+}
+
+#save-highscore-btn {
+  background: var(--accent);
+  color: var(--restart-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+#save-highscore-btn:hover {
   background: var(--restart-hover);
 }
