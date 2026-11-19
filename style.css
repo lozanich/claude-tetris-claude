@@ -220,3 +220,72 @@ kbd {
 #restart-btn:hover {
   background: var(--restart-hover);
 }
+
+.hidden {
+  display: none !important;
+}
+
+.pause-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+  min-width: 200px;
+}
+
+.menu-btn,
+.pause-menu button {
+  background: var(--accent);
+  color: var(--restart-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 10px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: background 0.15s;
+}
+
+.menu-btn:hover,
+.pause-menu button:hover,
+.pause-menu button:focus-visible {
+  background: var(--restart-hover);
+}
+
+.controls-list {
+  list-style: none;
+  font-size: 12px;
+  color: var(--controls-color);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.controls-list kbd {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--kbd-color);
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-right: 4px;
+}
+
+.level-select {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--label-color);
+  letter-spacing: 1px;
+}
+
+.level-select select {
+  background: var(--kbd-bg);
+  color: var(--fg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
