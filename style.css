@@ -203,6 +203,89 @@ kbd {
   color: var(--accent);
 }
 
+.record-form.hidden {
+  display: none;
+}
+
+#record-msg {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.record-row {
+  display: flex;
+  gap: 6px;
+}
+
+#record-name {
+  width: 130px;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  user-select: text;
+}
+
+#record-name:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#record-save,
+#reset-records-btn {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#record-save:hover,
+#reset-records-btn:hover {
+  border-color: var(--accent);
+}
+
+.records {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
+
+#records-list {
+  list-style: none;
+  width: 220px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  color: var(--controls-color);
+}
+
+#records-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+#records-list li.highlight {
+  background: var(--accent);
+  color: var(--restart-fg);
+  font-weight: 700;
+}
+
+#records-stats {
+  font-size: 11px;
+  color: var(--label-color);
+  line-height: 1.5;
+}
+
 #restart-btn {
   margin-top: 8px;
   background: var(--accent);
