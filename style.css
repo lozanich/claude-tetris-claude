@@ -53,6 +53,12 @@ body.light {
   --restart-hover: #5c7ce0;
 }
 
+.skin-neon {
+  --board-bg: #000000;
+  --grid-line: #14141f;
+  --board-border: #1a3a4a;
+}
+
 .wrapper {
   position: relative;
 }
@@ -74,6 +80,7 @@ body.light {
   text-shadow: 0 0 20px var(--accent-glow);
 }
 
+#skin-select,
 #theme-toggle {
   background: var(--kbd-bg);
   border: 1px solid var(--kbd-border);
@@ -85,6 +92,7 @@ body.light {
   letter-spacing: 1px;
 }
 
+#skin-select:hover,
 #theme-toggle:hover {
   border-color: var(--accent);
 }

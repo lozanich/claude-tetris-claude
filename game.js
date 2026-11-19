@@ -16,6 +16,24 @@ const COLORS = [
   '#b0bec5', // Nut - metallic silver
 ];
 
+const SKIN_COLORS = {
+  retro: COLORS,
+  neon: [
+    null,
+    '#00e5ff', '#ffee00', '#d500f9', '#00ff6a', '#ff1744', '#2979ff', '#ff9100', '#e0e0ff',
+  ],
+  pastel: [
+    null,
+    '#a8e6ef', '#fff1b8', '#d9c2f0', '#c4ecc9', '#f7c1c1', '#bcd6f7', '#fbd5aa', '#d8e0e5',
+  ],
+  pixel: [
+    null,
+    '#29b6f6', '#fbc02d', '#8e24aa', '#43a047', '#e53935', '#3949ab', '#fb8c00', '#90a4ae',
+  ],
+};
+
+const SKINS = ['retro', 'neon', 'pastel', 'pixel'];
+
 const PIECES = [
   null,
   [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
@@ -63,7 +81,9 @@ const recordsEl = document.getElementById('records');
 const recordsList = document.getElementById('records-list');
 const recordsExtra = document.getElementById('records-extra');
 const resetRecordsBtn = document.getElementById('reset-records');
+const skinSelect = document.getElementById('skin-select');
 
+let skin = 'retro';
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 let startLevel = 1;
 let started = false, combo = 0, maxCombo = 0, pendingRank = -1;
@@ -165,6 +185,25 @@ function resetRecords() {
   nameForm.classList.add('hidden');
   gameOverRestartBtn.classList.remove('hidden');
   renderRecords();
+}
+
+function applySkin(name) {
+  skin = SKINS.includes(name) ? name : 'retro';
+  SKINS.forEach(s => document.body.classList.toggle('skin-' + s, s === skin));
+  skinSelect.value = skin;
+}
+
+function initSkin() {
+  applySkin(localStorage.getItem('skin') || 'retro');
+}
+
+function changeSkin() {
+  applySkin(skinSelect.value);
+  localStorage.setItem('skin', skin);
+  if (current && next) {
+    draw();
+    drawNext();
+  }
 }
 
 function gridColor() {
@@ -289,15 +328,63 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
+function roundRect(context, x, y, w, h, r) {
+  context.beginPath();
+  context.moveTo(x + r, y);
+  context.arcTo(x + w, y, x + w, y + h, r);
+  context.arcTo(x + w, y + h, x, y + h, r);
+  context.arcTo(x, y + h, x, y, r);
+  context.arcTo(x, y, x + w, y, r);
+  context.closePath();
+}
+
+const BLOCK_DRAWERS = {
+  retro(context, px, py, s, color) {
+    context.fillStyle = color;
+    context.fillRect(px, py, s, s);
+    context.fillStyle = 'rgba(255,255,255,0.12)';
+    context.fillRect(px, py, s, 4);
+  },
+  neon(context, px, py, s, color) {
+    context.shadowColor = color;
+    context.shadowBlur = 12;
+    context.strokeStyle = color;
+    context.lineWidth = 2;
+    context.strokeRect(px + 1, py + 1, s - 2, s - 2);
+    context.fillStyle = color;
+    context.globalAlpha *= 0.35;
+    context.fillRect(px + 1, py + 1, s - 2, s - 2);
+    context.shadowBlur = 0;
+  },
+  pastel(context, px, py, s, color) {
+    context.fillStyle = color;
+    roundRect(context, px, py, s, s, 8);
+    context.fill();
+    context.fillStyle = 'rgba(255,255,255,0.35)';
+    roundRect(context, px + 3, py + 3, s - 6, 5, 2.5);
+    context.fill();
+  },
+  pixel(context, px, py, s, color) {
+    const u = s / 5;
+    context.fillStyle = color;
+    context.fillRect(px, py, s, s);
+    context.fillStyle = 'rgba(255,255,255,0.35)';
+    context.fillRect(px, py, s, u);
+    context.fillRect(px, py, u, s);
+    context.fillStyle = 'rgba(0,0,0,0.3)';
+    context.fillRect(px, py + s - u, s, u);
+    context.fillRect(px + s - u, py, u, s);
+    context.fillStyle = 'rgba(0,0,0,0.18)';
+    context.fillRect(px + 2 * u, py + 2 * u, u, u);
+    context.fillStyle = 'rgba(255,255,255,0.25)';
+    context.fillRect(px + u, py + 3 * u, u, u);
+  },
+};
+
 function drawBlock(context, x, y, colorIndex, size, alpha) {
   if (!colorIndex) return;
-  const color = COLORS[colorIndex];
   context.globalAlpha = alpha ?? 1;
-  context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
-  // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  BLOCK_DRAWERS[skin](context, x * size + 1, y * size + 1, size - 2, SKIN_COLORS[skin][colorIndex]);
   context.globalAlpha = 1;
 }
 
@@ -512,8 +599,13 @@ startLevelSelect.addEventListener('change', () => {
 nameForm.addEventListener('submit', submitName);
 resetRecordsBtn.addEventListener('click', resetRecords);
 themeToggleBtn.addEventListener('click', toggleTheme);
+skinSelect.addEventListener('change', () => {
+  changeSkin();
+  skinSelect.blur();
+});
 
 initTheme();
 initStartLevelSelect();
+initSkin();
 init();
 showStart();
