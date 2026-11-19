@@ -178,8 +178,9 @@ kbd {
   border-radius: 4px;
 }
 
-.overlay.hidden {
-  display: none;
+.overlay.hidden,
+.hidden {
+  display: none !important;
 }
 
 .overlay-box {
@@ -221,9 +222,126 @@ kbd {
   background: var(--restart-hover);
 }
 
-.hidden {
-  display: none !important;
+/* ---- Records ---- */
+#name-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
 }
+
+#name-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.name-row {
+  display: flex;
+  gap: 6px;
+}
+
+#name-input {
+  width: 130px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--kbd-border);
+  background: var(--kbd-bg);
+  color: var(--fg);
+  font-size: 14px;
+  user-select: text;
+}
+
+#name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#save-btn {
+  background: var(--accent);
+  color: var(--restart-fg);
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#records {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  width: 250px;
+}
+
+#records-list {
+  list-style: none;
+  width: 100%;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  counter-reset: rank;
+}
+
+#records-list li {
+  counter-increment: rank;
+  display: flex;
+  gap: 8px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: var(--fg);
+}
+
+#records-list li::before {
+  content: counter(rank) '.';
+  width: 18px;
+  color: var(--label-color);
+}
+
+#records-list li .rec-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#records-list li.empty {
+  color: var(--label-color);
+}
+
+#records-list li.highlight {
+  background: var(--accent);
+  color: var(--restart-fg);
+  font-weight: 700;
+}
+
+#records-list li.highlight::before {
+  color: var(--restart-fg);
+}
+
+#records-extra {
+  font-size: 12px;
+  color: var(--controls-color);
+  line-height: 1.5;
+}
+
+#reset-records {
+  background: none;
+  border: 1px solid var(--kbd-border);
+  color: var(--controls-color);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+#reset-records:hover,
+#reset-records.confirm {
+  border-color: var(--overlay-title-color);
+  color: var(--overlay-title-color);
+}
+
 
 .pause-menu {
   display: flex;
