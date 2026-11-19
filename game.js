@@ -42,6 +42,7 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 const themeToggleBtn = document.getElementById('theme-toggle');
+const skinSelect = document.getElementById('skin-select');
 
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
@@ -180,15 +181,97 @@ function updateHUD() {
   levelEl.textContent = level;
 }
 
-function drawBlock(context, x, y, colorIndex, size, alpha) {
-  if (!colorIndex) return;
-  const color = COLORS[colorIndex];
-  context.globalAlpha = alpha ?? 1;
+function drawRetro(context, px, py, size, color) {
   context.fillStyle = color;
-  context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+  context.fillRect(px + 1, py + 1, size - 2, size - 2);
   // highlight
   context.fillStyle = 'rgba(255,255,255,0.12)';
-  context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
+  context.fillRect(px + 1, py + 1, size - 2, 4);
+}
+
+function drawNeon(context, px, py, size, color) {
+  context.shadowColor = color;
+  context.shadowBlur = 14;
+  context.fillStyle = 'rgba(0,0,0,0.85)';
+  context.fillRect(px + 3, py + 3, size - 6, size - 6);
+  context.strokeStyle = color;
+  context.lineWidth = 2;
+  context.strokeRect(px + 3, py + 3, size - 6, size - 6);
+  context.shadowBlur = 0;
+  context.shadowColor = 'transparent';
+}
+
+function drawPastel(context, px, py, size, color) {
+  const radius = size * 0.3;
+  context.fillStyle = color;
+  context.beginPath();
+  context.roundRect(px + 2, py + 2, size - 4, size - 4, radius);
+  context.fill();
+  context.fillStyle = 'rgba(255,255,255,0.35)';
+  context.beginPath();
+  context.roundRect(px + 5, py + 5, size - 10, size * 0.25, radius / 2);
+  context.fill();
+}
+
+function drawPixel(context, px, py, size, color) {
+  const cell = size / 6;
+  context.fillStyle = color;
+  context.fillRect(px, py, size, size);
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 6; c++) {
+      const edge = r === 0 || c === 0 || r === 5 || c === 5;
+      if (edge) {
+        context.fillStyle = r === 0 || c === 0 ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.4)';
+      } else if ((r + c) % 2 === 0) {
+        context.fillStyle = 'rgba(0,0,0,0.18)';
+      } else {
+        context.fillStyle = 'rgba(255,255,255,0.12)';
+      }
+      context.fillRect(px + c * cell, py + r * cell, cell, cell);
+    }
+  }
+}
+
+const SKINS = {
+  retro: { colors: COLORS, draw: drawRetro },
+  neon: {
+    colors: [null, '#00f0ff', '#fff700', '#d400ff', '#39ff14', '#ff073a', '#2979ff', '#ff9100', '#e0e0e0'],
+    draw: drawNeon,
+  },
+  pastel: {
+    colors: [null, '#a8e6ef', '#fff3b0', '#d9b8f0', '#b8e6c1', '#f7b8b8', '#b3d4f7', '#fcd5a5', '#d6dfe4'],
+    draw: drawPastel,
+  },
+  pixel: {
+    colors: [null, '#29b6f6', '#fdd835', '#8e24aa', '#43a047', '#e53935', '#3949ab', '#fb8c00', '#90a4ae'],
+    draw: drawPixel,
+  },
+};
+
+let currentSkin = 'retro';
+
+function applySkin(skin) {
+  if (!SKINS[skin]) skin = 'retro';
+  currentSkin = skin;
+  for (const name of Object.keys(SKINS)) document.body.classList.toggle('skin-' + name, name === skin);
+  skinSelect.value = skin;
+  if (board) {
+    draw();
+    if (next) drawNext();
+  }
+}
+
+function initSkin() {
+  let saved = null;
+  try { saved = localStorage.getItem('skin'); } catch (e) { /* storage unavailable */ }
+  applySkin(saved);
+}
+
+function drawBlock(context, x, y, colorIndex, size, alpha) {
+  if (!colorIndex) return;
+  const skin = SKINS[currentSkin];
+  context.globalAlpha = alpha ?? 1;
+  skin.draw(context, x * size, y * size, size, skin.colors[colorIndex]);
   context.globalAlpha = 1;
 }
 
@@ -327,6 +410,12 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 themeToggleBtn.addEventListener('click', toggleTheme);
+skinSelect.addEventListener('change', () => {
+  applySkin(skinSelect.value);
+  try { localStorage.setItem('skin', currentSkin); } catch (e) { /* storage unavailable */ }
+  skinSelect.blur(); // keep keyboard focus on the game
+});
 
 initTheme();
+initSkin();
 init();
