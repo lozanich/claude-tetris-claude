@@ -89,6 +89,27 @@ body.light {
   border-color: var(--accent);
 }
 
+#skin-select {
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#skin-select:hover {
+  border-color: var(--accent);
+}
+
+/* Neon: always black board, regardless of light/dark theme */
+body.skin-neon {
+  --board-bg: #000;
+  --grid-line: #1a1a2e;
+  --board-border: #1a1a2e;
+}
+
 .game-container {
   display: flex;
   gap: 20px;
